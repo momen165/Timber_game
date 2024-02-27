@@ -1,6 +1,16 @@
 #include <sstream>
 #include <SFML/Graphics.hpp>
 using namespace sf;
+//update branches function
+void updateBranches(int seed);
+
+const int NUM_BRANCHES = 6;
+Sprite branches[NUM_BRANCHES];
+
+//where is the player/branch?
+//left or right
+enum class side{Left,Right,NONE};
+side branchPosition[NUM_BRANCHES];
 // This is where our game starts from
 int main()
 {
