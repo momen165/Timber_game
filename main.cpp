@@ -1,5 +1,7 @@
 #include <sstream>
+
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 using namespace sf;
 
 //update branches function
@@ -13,9 +15,7 @@ Sprite branches[NUM_BRANCHES];
 enum class side{Left,Right,NONE};
 side branchPosition[NUM_BRANCHES];
 // This is where our game starts from
-int main()
-{
-
+int main() {
     VideoMode vm(1920,1080);
     RenderWindow window(vm,"timber", Style::Fullscreen);
 
@@ -40,8 +40,24 @@ int main()
     textureTree.loadFromFile("graphics/tree.png");
 
     Sprite spriteTree;
+    Sprite spriteTree1;
+    Sprite spriteTree2;
+    Sprite spriteTree3;
     spriteTree.setTexture(textureTree);
+    spriteTree1.setTexture(textureTree);
+    spriteTree2.setTexture(textureTree);
+    spriteTree3.setTexture(textureTree);
+
     spriteTree.setPosition(810, 0);
+    spriteTree1.setPosition(810 + 900, 600);
+    spriteTree1.setScale(0.8f, 0.8f);
+    spriteTree2.setPosition(810 - 700, 400);
+    spriteTree2.setScale(0.4f, 0.4f);
+    spriteTree3.setPosition(810 + 700, 600);
+    spriteTree3.setScale(0.3f, 0.3f);
+
+
+   
 
 
     //prepare the bee
@@ -155,8 +171,8 @@ int main()
         branches[i].setOrigin(220,20);
     }
 
-   // Prepare the player
-   Texture texturePlayer;
+    // Prepare the player
+    Texture texturePlayer;
     texturePlayer.loadFromFile("graphics/player.png");
     Sprite spritePlayer;
     spritePlayer.setTexture(texturePlayer);
@@ -198,14 +214,41 @@ int main()
     //control the player input
     bool acceptInput = false;
 
+    //adding sound
+    //chopping sound
+    SoundBuffer chopBuffer;
+    
+    chopBuffer.loadFromFile("sound/chop.wav");
+    Sound chop;
+    
+   
+    chop.setPitch(1.2 + static_cast <float> (rand()) / ( static_cast <float> (RAND_MAX/(.9-.2))));
+  
+    chop.setBuffer(chopBuffer);
+
+    // The player has met his end under a branch
+    SoundBuffer deathBuffer;
+    deathBuffer.loadFromFile("sound/death.wav");
+    Sound death;
+    death.setVolume(14);
+    death.setBuffer(deathBuffer);
+
+    // Out of time
+    SoundBuffer ootBuffer;
+    ootBuffer.loadFromFile("sound/out_of_time.wav");
+    Sound outOfTime;
+    outOfTime.setVolume(14);
+    outOfTime.setBuffer(ootBuffer);
+    
+    
     while (window.isOpen()) {
         // Handle the players input
         Event event;
         while (window.pollEvent(event)) {
             if (event.type == Event::KeyReleased && !paused) {
-// Listen for key presses again
+                // Listen for key presses again
                 acceptInput = true;
-// hide the axe
+                // hide the axe
                 spriteAxe.setPosition(2000,
                                       spriteAxe.getPosition().y);
             }
@@ -254,6 +297,8 @@ int main()
                 logSpeedX = -5000;
                 logActive = true;
                 acceptInput = false;
+                // Play a chop sound
+                chop.play();
             }
             // Handle the left cursor key
             if (Keyboard::isKeyPressed(Keyboard::Left)) {
@@ -272,6 +317,8 @@ int main()
                 logSpeedX = 5000;
                 logActive = true;
                 acceptInput = false;
+                // Play a chop sound
+                chop.play();
             }
         }
 
@@ -282,21 +329,7 @@ int main()
             // Measure time
             sf::Time dt = clock.restart();
 
-            // Handle a flying log
-            if (logActive) {
-
-                spriteLog.setPosition(
-                        spriteLog.getPosition().x + (logSpeedX * dt.asSeconds()),
-
-                        spriteLog.getPosition().y + (logSpeedY * dt.asSeconds()));
-                // Has the log reached the right hand edge?
-                if (spriteLog.getPosition().x < -100 ||
-                    spriteLog.getPosition().x > 2000) {
-                    // Set it up ready to be a whole new log next frame
-                    logActive = false;
-                    spriteLog.setPosition(810, 720);
-                }
-            }
+           
 
 
             //subtract from the amount of time remaining
@@ -316,6 +349,9 @@ int main()
                                       textRect.top +
                                       textRect.height / 2.0f);
                 messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
+
+                //play the time out sound
+                outOfTime.play();
             }
 
             //setup the bee
@@ -412,117 +448,169 @@ int main()
             ss << "Score = " << score;
             scoreText.setString(ss.str());
 
-        }
-
-        //update the branch sprite
-        // update the branch sprites
-        for (int i = 0; i < NUM_BRANCHES; i++) {
-            float height = i * 150;
-
-            if (branchPosition[i] == side::Left) {
-// Move the sprite to the left side
-                branches[i].setPosition(610, height);
-// Flip the sprite round the other way
-                branches[i].setRotation(180);
-            } else if (branchPosition[i] == side::Right) {
-// Move the sprite to the right side
-                branches[i].setPosition(1330, height);
-// Set the sprite rotation to normal
-                branches[i].setRotation(0);
-            } else {
-// Hide the branch
-                branches[i].setPosition(3000, height);
-            }
-        }
-
-
-
-        //draw the scene
-
-
-
-
-
-
-        //clear every thing from the last frame
-        window.clear();
-
-
-        //draw our game scene here
-        window.draw(spriteBackground);
-
-        // Draw the clouds
-        window.draw(spriteCloud1);
-        window.draw(spriteCloud2);
-        window.draw(spriteCloud3);
-        //draw the branches
-        for(int i = 0; i<NUM_BRANCHES;i++){
-            window.draw(branches[i]);
-        }
-
-
-        // Draw the tree
-        window.draw(spriteTree);
-
-        //draw the player
-        window.draw(spritePlayer);
-
-        //draw the axe
-        window.draw(spriteAxe);
-
-        //draw the log
-        window.draw(spriteLog);
-
-        //draw the grave stone
-        window.draw(spriteRip);
-
-
-
-        // Draw the bee
-        window.draw(spriteBee);
-
-        //draw the score
-        window.draw(scoreText);
-
-        //draw the time bar
-        window.draw(timeBar);
-
-        if(paused){
-            //draw message
-            window.draw(messageText);
-        }
-
-
-        //show every thing we just draw
-        window.display();
         
 
+            //update the branch sprite
+            // update the branch sprites
+            for (int i = 0; i < NUM_BRANCHES; i++) {
+                float height = i * 150;
+
+                if (branchPosition[i] == side::Left) {
+                    // Move the sprite to the left side
+                    branches[i].setPosition(610, height);
+                    // Flip the sprite round the other way
+                    branches[i].setRotation(180);
+                } else if (branchPosition[i] == side::Right) {
+                    // Move the sprite to the right side
+                    branches[i].setPosition(1330, height);
+                    // Set the sprite rotation to normal
+                    branches[i].setRotation(0);
+                } else {
+                    // Hide the branch
+                    branches[i].setPosition(3000, height);
+                }
+            }
+
+            // Handle a flying log
+            if (logActive) {
+
+                spriteLog.setPosition(
+                        spriteLog.getPosition().x + (logSpeedX * dt.asSeconds()),
+
+                        spriteLog.getPosition().y + (logSpeedY * dt.asSeconds()));
+                // Has the log reached the right hand edge?
+                if (spriteLog.getPosition().x < -100 ||
+                    spriteLog.getPosition().x > 2000) {
+                    // Set it up ready to be a whole new log next frame
+                    logActive = false;
+                    spriteLog.setPosition(810, 720);
+                    }
+            }
+            
+            //has the player been squished by a branch?
+            if(branchPosition[5] == playerSide) {
+                //death
+                paused = true;
+                acceptInput = false;
+
+                 
+                //draw a gravestone
+               
+                spriteRip.setPosition(spritePlayer.getPosition());
+                
+                //hide the player
+                spritePlayer.setPosition(2000,660);
+                //hide the axe
+               
+
+                // Change the text of the message
+                messageText.setString("SQUISHED!!");
+                // Center it on the screen
+                FloatRect textRect = messageText.getLocalBounds();
+                messageText.setOrigin(textRect.left +
+                textRect.width / 2.0f,
+                textRect.top + textRect.height / 2.0f);
+                messageText.setPosition(1920 / 2.0f,
+                1080 / 2.0f);
+
+                //play the death sound
+                death.play();
+            }
+
+
+
+            
+            //draw the scene
+            
+
+
+
+        }
+
+
+
+            //clear every thing from the last frame
+            window.clear();
+
+
+            //draw our game scene here
+            window.draw(spriteBackground);
+
+            // Draw the clouds
+            window.draw(spriteCloud1);
+            window.draw(spriteCloud2);
+            window.draw(spriteCloud3);
+            //draw the branches
+            for(int i = 0; i<NUM_BRANCHES;i++){
+                window.draw(branches[i]);
+            }
+
+
+            // Draw the tree
+            window.draw(spriteTree);
+            window.draw(spriteTree1);
+            window.draw(spriteTree2);
+            window.draw(spriteTree3);
+
+            //draw the player
+            window.draw(spritePlayer);
+
+            //draw the axe
+            window.draw(spriteAxe);
+
+            //draw the log
+            window.draw(spriteLog);
+
+            //draw the grave stone
+           
+            window.draw(spriteRip);
+
+
+
+            // Draw the bee
+            window.draw(spriteBee);
+
+            //draw the score
+            window.draw(scoreText);
+
+            //draw the time bar
+            window.draw(timeBar);
+
+            if(paused){
+                //draw message
+                window.draw(messageText);
+            }
+
+
+            //show every thing we just draw
+            window.display();
+        
+
+        }
+
+        return 0;
+
 
     }
 
-    return 0;
-
-
-}
-
-void updateBranches(int seed){
-    for(int j = NUM_BRANCHES-1;j>0;j--)
-    {
-        branchPosition[j] = branchPosition[j-1];
+    void updateBranches(int seed){
+        for(int j = NUM_BRANCHES-1;j>0;j--)
+        {
+            branchPosition[j] = branchPosition[j-1];
+        }
+        //spawn a new branch at position 0
+        //left , right or none
+        srand((int)time(0)+seed);
+        int r = (rand() % 5);
+        switch (r) {
+            case 0:
+                branchPosition[0] = side::Left;
+            break;
+            case 1:
+                branchPosition[0]= side::Right;
+            break;
+            default:
+                branchPosition[0] = side::NONE;
+            break;
+        }
     }
-    //spawn a new branch at position 0
-    //left , right or none
-    srand((int)time(0)+seed);
-    int r = (rand() % 5);
-    switch (r) {
-        case 0:
-            branchPosition[0] = side::Left;
-            break;
-        case 1:
-            branchPosition[0]= side::Right;
-            break;
-        default:
-            branchPosition[0] = side::NONE;
-            break;
-    }
-}
